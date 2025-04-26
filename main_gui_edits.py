@@ -9,7 +9,7 @@ import threading
 
 tracker = APTracker("Test")
 
-#tracker.folder_checker()
+tracker.folder_checker()
 
 def resource_path(relative_path):
     try:
@@ -117,10 +117,13 @@ def check_connectivity():
         else:
             status_lights[instrument].configure(text_color="red")
             #messagebox.showerror("Error", f"{instrument} is not connected.")
+        
+    return
 
 def abort_button():
     tracker.stop_task()
     update_label_to_idle()
+    return
 
 instruments_ip = CTkFrame(instr_status)
 instruments_ip.pack(side='left',fill='both',expand=True,padx=5,pady=5)
@@ -222,6 +225,7 @@ tracker.qsrx_sl = qsrx_sl.get()
 
 def update_label_to_idle():
     status_label.configure(text="\nIdle")
+    return
 
 def tracking(key):
     tracking_algo = {1:[tracker.track_sfb1,"SFB1 (RF)"],
@@ -241,7 +245,11 @@ def tracking(key):
                  15:[tracker.track_qsr_int_bite,"QSRx Int. (BITE)"],
                  16:[tracker.track_qsr_sfb1_bite,"QSRx Int. SFB1(BITE)"],
                  17:[tracker.track_qsr_sfb2_bite,"QSRx Int. SFB2(BITE)"],
-                 18:[tracker.track_qsr_sfb3_bite,"QSRx Int. SFB3(BITE)"]}
+                 18:[tracker.track_qsr_sfb3_bite,"QSRx Int. SFB3(BITE)"],
+                 19:[tracker.track_hmr1,"HMR SFB Low (RF)"],
+                 20:[tracker.track_hmr1_bite,"HMR SFB Low (BITE)"],
+                 21:[tracker.track_hmr2,"HMR SFB High (RF)"],
+                 22:[tracker.track_hmr2_bite,"HMR SFB High (BITE)"]}
 
     tracker.sfb1_sl = sfb1_sl.get()
     tracker.sfb2_sl = sfb2_sl.get()
@@ -252,14 +260,19 @@ def tracking(key):
     status_label.configure(text="Tracking\n %s" % (tracking_algo[key][1]))
 
     tracking_algo[key][0]()
-
-    if tracker.stop_event.is_set():
-        update_label_to_idle()
+    
+    tracker.stop_event.set()
+    #CTkMessagebox(title='Instrument Control', message="Tracking Completed", option_1='OK',icon_size=(40,40),width=500,justify='centre',wraplength=500,font=("Arial",15))
+    update_label_to_idle()
+    return
 
 def track_thread(key):
     tracker.stop_event.clear()
     task_thread = threading.Thread(target=tracking,args=(key,))
     task_thread.start()
+
+    return
+
 
 '''SFB Buttons'''
 
@@ -328,10 +341,10 @@ CTkButton(qsrx_integrated_b,text='SFB3',font=app_font,command=lambda: track_thre
 hmr_buttons = CTkFrame(hmr_frame)
 hmr_buttons.pack(side='top',fill='x',expand=True,padx=5,pady=5)
 
-CTkButton(hmr_buttons,text='Track HMRx low',font=app_font,command=tracker.start_hmr1,width=width,height=height).grid(row=0,column=0,padx=5,pady=5)
-CTkButton(hmr_buttons,text='Track HMRx low \n(BITE)',font=app_font,command=tracker.start_hmr1_bite,width=width,height=height).grid(row=1,column=0,padx=5,pady=5)
-CTkButton(hmr_buttons,text='Track HMRx high',font=app_font,command=tracker.start_hmr2,width=width,height=height).grid(row=0,column=1,padx=5,pady=5)
-CTkButton(hmr_buttons,text='Track HMRx high \n(BITE)',font=app_font,command=tracker.start_hmr2_bite,width=width,height=height).grid(row=1,column=1,padx=5,pady=5)
+CTkButton(hmr_buttons,text='Track HMRx low',font=app_font,command=lambda: track_thread(19),width=width,height=height).grid(row=0,column=0,padx=5,pady=5)
+CTkButton(hmr_buttons,text='Track HMRx low \n(BITE)',font=app_font,command=lambda: track_thread(20),width=width,height=height).grid(row=1,column=0,padx=5,pady=5)
+CTkButton(hmr_buttons,text='Track HMRx high',font=app_font,command=lambda: track_thread(21),width=width,height=height).grid(row=0,column=1,padx=5,pady=5)
+CTkButton(hmr_buttons,text='Track HMRx high \n(BITE)',font=app_font,command=lambda: track_thread(22),width=width,height=height).grid(row=1,column=1,padx=5,pady=5)
 
 root.resizable(False,False)
 root.mainloop()

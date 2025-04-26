@@ -37,7 +37,7 @@ class APTracker:
                 device.write('MMEM:MDIR "%s"' % (child))
 
         folder_maker("C:","Synergy")
-        level_1 = ["QSRx","QSRx_int","SFB1","SFB2","SFB3"]
+        level_1 = ["QSRx","QSRx_int","SFB1","SFB2","SFB3","HMR_SFB_Low","HMR_SFB_High"]
         level_2 = ["RF","BITE"]
         for check1 in level_1:
             folder_maker("C:\\Synergy",check1)
@@ -47,6 +47,7 @@ class APTracker:
         
         device.close()
         rm.close()
+        return
 
     def turn_off_ps1(self):
         ip_ps = self.ip_ps
@@ -75,6 +76,7 @@ class APTracker:
 
         device.close()
         rm.close()
+        return
 
     def ps_output(self,state=0):
             ip_ps = self.ip_ps
@@ -86,6 +88,7 @@ class APTracker:
             
             device.close()
             rm.close()
+            return
 
     def mbox(self,message):
         box = CTkMessagebox(title='Instrument Control', message=message, option_1='OK',option_2='Abort',icon_size=(40,40),width=500,justify='centre',wraplength=500,font=("Arial",15))        
@@ -98,6 +101,7 @@ class APTracker:
         self.turn_off_ps1()
         self.rf_off()
         _ = self.mbox("Process has been aborted!")
+        return
 
     def resource_path(self,relative_path):
         try:
@@ -129,10 +133,10 @@ class APTracker:
             pha = table1.cell(i+3, 7)
             amp = table1.cell(i+3, 8)
             
-            p2.text = str(round(new_value.iloc[i,5],2))
-            p4.text = str(round(new_value.iloc[i,6],2))
-            pha.text = str(round(new_value.iloc[i,7],2))
-            amp.text = str(round(new_value.iloc[i,8],2))
+            p2.text = str(round(new_value.iloc[i,4],2))
+            p4.text = str(round(new_value.iloc[i,5],2))
+            pha.text = str(round(new_value.iloc[i,6],2))
+            amp.text = str(round(new_value.iloc[i,7],2))
 
         
         table2 = doc1.tables[3]
@@ -144,15 +148,16 @@ class APTracker:
             pha = table2.cell(j, 7)
             amp = table2.cell(j, 8)
             
-            p2.text = str(round(new_value.iloc[j+27,5],2))
-            p4.text = str(round(new_value.iloc[j+27,6],2))
-            pha.text = str(round(new_value.iloc[j+27,7],2))
-            amp.text = str(round(new_value.iloc[j+27,8],2))
+            p2.text = str(round(new_value.iloc[j+27,4],2))
+            p4.text = str(round(new_value.iloc[j+27,5],2))
+            pha.text = str(round(new_value.iloc[j+27,6],2))
+            amp.text = str(round(new_value.iloc[j+27,7],2))
 
         # Save the updated document
         doc1.save("test_data/%s/%s" % (folder,output))
         
         docx2pdf.convert("test_data/%s/%s" % (folder,output),"test_data/%s/%s" % (folder,pdf_output))
+        return
 
     def report_sfb(self,folder,template,output,pdf_output,new_value):
         
@@ -173,6 +178,7 @@ class APTracker:
         doc1.save("test_data/%s/%s" % (folder,output))
         
         docx2pdf.convert("test_data/%s/%s" % (folder,output),"test_data/%s/%s" % (folder,pdf_output))
+        return
 
     def rf_off(self):
         rm = visa.ResourceManager()
@@ -227,6 +233,7 @@ class APTracker:
         device.write('OUTP 1')
 
         CTkMessagebox(title='Warning!', message='Please wait for 40 seconds before continuing.', option_1='OK')
+        return
 
     def sfb_settings(self,bands,window):
         ip_zna = self.ip_zna
@@ -249,12 +256,27 @@ class APTracker:
         time.sleep(1)
         device_vna.close()
         rm.close()
+
+        return
     
     def phase_ref_sfb(self,band_num,sub_band,window=2):
         ip_zna = self.ip_zna
         bands = [[[0.5,0.8],[0.7,1.2],[1.1,1.6],[1.5,2.2]],
                 [[2.0,2.75],[2.5,3.75],[3.5,5.25],[5,6.25]],
                 [[6.0,9.5],[9.0,13.0],[12.5,14.5],[14.0,18.0]]]
+        
+        sfb_ranges = {1:[" (0.5 GHz to 0.8 GHz)",
+                        " (0.7 GHz to 1.2 GHz)",
+                        " (1.1 GHz to 1.6 GHz)",
+                        " (1.5 GHz to 2.2 GHz)"],
+                    2:[" (2.0 GHz to 2.75 GHz)",
+                        " (2.5 GHz to 3.75 GHz)",
+                        " (3.5 GHz to 5.25 GHz)",
+                        " (5.0 GHz to 6.25 GHz)"],
+                    3:[" (6.0 GHz to 9.5 GHz)",
+                        " (9.0 GHz to 13.0 GHz)",
+                        " (12.5 GHz to 14.5 GHz)",
+                        " (14.0 GHz to 18.0 GHz)"]}
         
         current = bands[band_num-1][sub_band]
         
@@ -265,7 +287,7 @@ class APTracker:
         device.write(":CALC%s:PAR:SDEF 'Phase%s', 'S21'" % (window,window))
         time.sleep(1)
         device.write("DISPlay:WINDow%s:STATe ON" % (window))
-        device.write(":DISP:WIND%s:TITL:DATA 'Phase: Band%s'" % (window,band_num))
+        device.write(":DISP:WIND%s:TITL:DATA 'Phase SFB%s%s'" % (window,band_num,sfb_ranges[band_num][sub_band]))
         device.write(":DISP:WIND%s:TRAC:EFEED 'Phase%s'" % (window,window))
         time.sleep(1)
         device.write(":DISPlay:WINDow%s:TRACe:Y:PDIVision 5,'Phase%s'" % (window,window))
@@ -291,6 +313,8 @@ class APTracker:
 
         device.close()
         rm.close()
+
+        return
     
     def gain_ref(self,band_num,sub_band,type='sfb',window=2):
 
@@ -300,6 +324,19 @@ class APTracker:
                 [[2.0,2.75],[2.5,3.75],[3.5,5.25],[5,6.25]],
                 [[6.0,9.5],[9.0,13.0],[12.5,14.5],[14.0,18.0]]]
         
+        sfb_ranges = {1:[" (0.5 GHz to 0.8 GHz)",
+                        " (0.7 GHz to 1.2 GHz)",
+                        " (1.1 GHz to 1.6 GHz)",
+                        " (1.5 GHz to 2.2 GHz)"],
+                    2:[" (2.0 GHz to 2.75 GHz)",
+                        " (2.5 GHz to 3.75 GHz)",
+                        " (3.5 GHz to 5.25 GHz)",
+                        " (5.0 GHz to 6.25 GHz)"],
+                    3:[" (6.0 GHz to 9.5 GHz)",
+                        " (9.0 GHz to 13.0 GHz)",
+                        " (12.5 GHz to 14.5 GHz)",
+                        " (14.0 GHz to 18.0 GHz)"]}
+
         current = bands[band_num-1][sub_band]
         if type =='sfb':
             self.sfb_settings(current,window=window)
@@ -318,7 +355,7 @@ class APTracker:
         device.write("DISP:WIND%s:TRAC:Y:RLEV 0, 'Gain%s'" % (window,window))
         device.write("DISP:WIND%s:TRAC:Y:RPOS 50, 'Gain%s'" % (window,window))
         device.write("DISPlay:WINDow%s:STATe ON" % (window))
-        device.write(":DISP:WIND%s:TITL:DATA 'Gain: Band%s'" % (window,band_num))
+        device.write(":DISP:WIND%s:TITL:DATA 'Gain SFB%s%s'" % (window,band_num,sfb_ranges[band_num][sub_band]))
         device.write(':CALCulate%s:FORMat %s' % (window,'MLOGarithmic'))
         time.sleep(0.5)
         device.write(":TRAC:COPY:MATH 'Gain%s_mem','Gain%s'" % (window,window))
@@ -339,6 +376,8 @@ class APTracker:
 
         device.close()
         rm.close()
+
+        return
     
     def new_phase(self,window,p_num=2):
         ip_zna = self.ip_zna
@@ -363,6 +402,8 @@ class APTracker:
 
         device.close()
         rm.close()
+
+        return
     
     def new_gain(self,window,g_num):
         ip_zna = self.ip_zna
@@ -385,6 +426,8 @@ class APTracker:
 
         device.close()
         rm.close()
+
+        return
     
     def track_sfb1(self):
 
@@ -396,129 +439,114 @@ class APTracker:
         device.write('*RST')
         device.close()
         rm.close()
-
-        band_ranges = [" (0.5 GHz to 0.8 GHz)",
-                    " (0.7 GHz to 1.2 GHz)",
-                    " (1.1 GHz to 1.6 GHz)",
-                    " (1.5 GHz to 2.2 GHz)"]
         
-        for i in range(4):
-            if self.stop_event.is_set():
-                return
-            band = 'Change to Band' + str(i+1) + band_ranges[i]
-            f_band = self.mbox(band)
-            if f_band == 'OK':
-                self.gain_ref(band_num=1,sub_band=i,type='sfb',window=2*i+1)
-                time.sleep(1)
-                self.phase_ref_sfb(band_num=1,sub_band=i,window=2*i+2)
-            else:
-                self.stop_task()
-            
-        for j in range(3):
-            if self.stop_event.is_set():
-                return
-            mess = 'Change to Channel ' + str(j+2) + '\nChange to Band 1' + band_ranges[0]
-            ref_port = self.mbox(mess)
-            if ref_port == 'OK':
-                self.new_gain(1,j+2)
-                self.new_phase(2,j+2)
-
-                f_band = self.mbox('Change to Band 2 %s' % (band_ranges[1]))
-                if f_band == 'OK':
-                    self.new_gain(3,j+2)
-                    self.new_phase(4,j+2)
+        controls = ["1 1","1 0","0 1","0 0"]
+        
+        message = "SFB1 range %s GHz - %s GHz\nConnect VNA Port-1 to CH-1 RF Input of SFB\nConnect VNA Port-2 to CH-1 Output of SFB" % (0.5,2.2)
+        ref_1 = self.mbox(message)
+        
+        if ref_1 == "OK":
+            for i in range(4):
+                if self.stop_event.is_set():
+                    return
                 
-                    f_band = self.mbox('Change to Band 3 %s' % (band_ranges[2]))
-                    if f_band == 'OK':
-                        self.new_gain(5,j+2)
-                        self.new_phase(6,j+2)
-                    
-                        f_band = self.mbox('Change to Band 4 %s' % (band_ranges[3]))
-                        if f_band == 'OK':
-                            self.new_gain(7,j+2)
-                            self.new_phase(8,j+2)
-                        else:
-                            self.stop_task()
-                    else:
-                        self.stop_task()
+                f_band = self.mbox("Set SFB1 Band %s Control: %s" % (i+1,controls[i]))
+                
+                if f_band == 'OK':
+                    self.gain_ref(band_num=1,sub_band=i,type='sfb',window=2*i+1)
+                    time.sleep(1)
+                    self.phase_ref_sfb(band_num=1,sub_band=i,window=2*i+2)
                 else:
                     self.stop_task()
-            else:
-                self.stop_task()
+                
+            for j in range(3):
+                if self.stop_event.is_set():
+                    return
+                mess = self.mbox('Connect VNA Port-1 to CH-%s RF Input of SFB\nConnect VNA Port-2 to CH-%s Output of SFB' % (str(j+2),str(j+2)))
+                if mess == "OK":
+                    for k in range(4):
+                        ref_port = self.mbox("Set SFB1 Band %s Control: %s" % (k+1,controls[k]))
+                        if ref_port == 'OK':
+                            self.new_gain(2*k+1,j+2)
+                            self.new_phase(2*k+2,j+2)
+                        else:
+                            self.stop_task()
+                else:
+                    self.stop_task()
 
-        time.sleep(0.5)
-        self.marker_sfb(1,False)
+            time.sleep(0.5)
+            
+            self.marker_sfb(1,False)
 
 
-        self.ps_output(0)
-        dut = self.sfb1_sl
-        self.save_diagram("SFB1","RF",dut)
+            self.ps_output(0)
+            dut = self.sfb1_sl
+            self.save_diagram("SFB1","RF",dut)
+        else:
+            return
+        
+        return
     
     def track_sfb2(self):
         ip_zna = self.ip_zna
-        
+
         rm = visa.ResourceManager()
         device = rm.open_resource(ip_zna)
         time.sleep(2)
         device.write('*RST')
         device.close()
         rm.close()
-
-        band_ranges = [" (2.0 GHz to 2.75 GHz)",
-                    " (2.5 GHz to 3.75 GHz)",
-                    " (3.5 GHz to 5.25 GHz)",
-                    " (5.0 GHz to 6.25 GHz)"]
         
-        for i in range(4):
-            if self.stop_event.is_set():
-                return
-            band = 'Change to Band' + str(i+1) + band_ranges[i]
-            f_band = self.mbox(band)
-            if f_band == 'OK':
-                self.gain_ref(band_num=2,sub_band=i,type='sfb',window=2*i+1)
-                self.phase_ref_sfb(band_num=2,sub_band=i,window=2*i+2)
-            
-        for j in range(3):
-            if self.stop_event.is_set():
-                return
-            mess = 'Change to Channel ' + str(j+2) + '\nChange to Band 1' + band_ranges[0]
-            ref_port = self.mbox(mess)
-            if ref_port == 'OK':
-                self.new_gain(1,j+2)
-                self.new_phase(2,j+2)
-
-                f_band = self.mbox('Change to Band 2 %s' % (band_ranges[1]))
-                if f_band == 'OK':
-                    self.new_gain(3,j+2)
-                    self.new_phase(4,j+2)
+        controls = ["0 1","1 0","0 0","1 1"]
+        
+        message = "SFB2 range %s GHz - %s GHz\nConnect VNA Port-1 to CH-1 RF Input of SFB\nConnect VNA Port-2 to CH-1 Output of SFB" % (2,6)
+        ref_1 = self.mbox(message)
+        
+        if ref_1 == "OK":
+            for i in range(4):
+                if self.stop_event.is_set():
+                    return
                 
-                    f_band = self.mbox('Change to Band 3 %s' % (band_ranges[2]))
-                    if f_band == 'OK':
-                        self.new_gain(5,j+2)
-                        self.new_phase(6,j+2)
-                    
-                        f_band = self.mbox('Change to Band 4 %s' % (band_ranges[3]))
-                        if f_band == 'OK':
-                            self.new_gain(7,j+2)
-                            self.new_phase(8,j+2)
-                        else:
-                            self.stop_task()
-                    else:
-                        self.stop_task()
+                f_band = self.mbox("Set SFB2 Band %s Control: %s" % (i+1,controls[i]))
+                
+                if f_band == 'OK':
+                    self.gain_ref(band_num=1,sub_band=i,type='sfb',window=2*i+1)
+                    time.sleep(1)
+                    self.phase_ref_sfb(band_num=1,sub_band=i,window=2*i+2)
                 else:
                     self.stop_task()
-            else:
-                self.stop_task()
+                
+            for j in range(3):
+                if self.stop_event.is_set():
+                    return
+                mess = self.mbox('Connect VNA Port-1 to CH-%s RF Input of SFB\nConnect VNA Port-2 to CH-%s Output of SFB' % (str(j+2),str(j+2)))
+                if mess == "OK":
+                    for k in range(4):
+                        ref_port = self.mbox("Set SFB2 Band %s Control: %s" % (k+1,controls[k]))
+                        if ref_port == 'OK':
+                            self.new_gain(2*k+1,j+2)
+                            self.new_phase(2*k+2,j+2)
+                        else:
+                            self.stop_task()
+                else:
+                    self.stop_task()
+
+            time.sleep(0.5)
+            
+            self.marker_sfb(1,False)
+
+
+            self.ps_output(0)
+            dut = self.sfb1_sl
+            self.save_diagram("SFB1","RF",dut)
+        else:
+            return
         
-        time.sleep(0.5)
-        self.marker_sfb(2,False)
-        self.ps_output(0)
-        dut = self.sfb2_sl
-        self.save_diagram("SFB2","RF",dut)
+        return
     
     def track_sfb3(self):
         ip_zna = self.ip_zna
-        
+
         rm = visa.ResourceManager()
         device = rm.open_resource(ip_zna)
         time.sleep(2)
@@ -526,128 +554,114 @@ class APTracker:
         device.close()
         rm.close()
         
+        controls = ["0 0","0 1","1 0","1 1"]
         
-        band_ranges = [" (6.0 GHz to 9.5 GHz)",
-                    " (9.0 GHz to 13.0 GHz)",
-                    " (12.5 GHz to 14.5 GHz)",
-                    " (14.0 GHz to 18.0 GHz)"]
-
-        for i in range(4):
-            if self.stop_event.is_set():
-                return
-            band = 'Change to Band' + str(i+1) + band_ranges[i]
-            f_band = self.mbox(band)
-            if f_band == 'OK':
-                self.gain_ref(band_num=3,sub_band=i,type='sfb',window=2*i+1)
-                self.phase_ref_sfb(band_num=3,sub_band=i,window=2*i+2)
-            
-        for j in range(3):
-            if self.stop_event.is_set():
-                return
-            mess = 'Change to Channel ' + str(j+2) + '\nChange to Band 1' + band_ranges[0]
-            ref_port = self.mbox(mess)
-            if ref_port == 'OK':
-                self.new_gain(1,j+2)
-                self.new_phase(2,j+2)
-
-                f_band = self.mbox('Change to Band 2 %s' % (band_ranges[1]))
-                if f_band == 'OK':
-                    self.new_gain(3,j+2)
-                    self.new_phase(4,j+2)
-                
-                    f_band = self.mbox('Change to Band 3 %s' % (band_ranges[2]))
-                    if f_band == 'OK':
-                        self.new_gain(5,j+2)
-                        self.new_phase(6,j+2)
-                    
-                        f_band = self.mbox('Change to Band 4 %s' % (band_ranges[3]))
-                        if f_band == 'OK':
-                            self.new_gain(7,j+2)
-                            self.new_phase(8,j+2)
-                        else:
-                            self.stop_task()
-                    else:
-                        self.stop_task()
-                else:
-                    self.stop_task()
-            else:
-                self.stop_task()
+        message = "SFB3 range %s GHz - %s GHz\nConnect VNA Port-1 to CH-1 RF Input of SFB\nConnect VNA Port-2 to CH-1 Output of SFB" % (6,18)
+        ref_1 = self.mbox(message)
         
-        time.sleep(0.5)
-        self.marker_sfb(3,False)
-        self.ps_output(0)
-        dut = self.sfb3_sl
-        self.save_diagram("SFB3","RF",dut)
-    
-    def track_sfb1_bite(self):
-        ip_zna = self.ip_zna
-        
-        rm = visa.ResourceManager()
-        device = rm.open_resource(ip_zna)
-        time.sleep(2)
-        device.write('*RST')
-        device.close()
-        rm.close()
-        
-        
-        band_ranges = [" (0.5 GHz to 0.8 GHz)",
-                    " (0.7 GHz to 1.2 GHz)",
-                    " (1.1 GHz to 1.6 GHz)",
-                    " (1.5 GHz to 2.2 GHz)"]
-        
-        bite_set = self.mbox('Set to BITE mode')
-        
-        if bite_set == 'OK':
+        if ref_1 == "OK":
             for i in range(4):
                 if self.stop_event.is_set():
                     return
-                band = 'Change to Band' + str(i+1) + band_ranges[i]
-                f_band = self.mbox(band)
+                
+                f_band = self.mbox("Set SFB13 Band %s Control: %s" % (i+1,controls[i]))
+                
                 if f_band == 'OK':
                     self.gain_ref(band_num=1,sub_band=i,type='sfb',window=2*i+1)
+                    time.sleep(1)
                     self.phase_ref_sfb(band_num=1,sub_band=i,window=2*i+2)
+                else:
+                    self.stop_task()
                 
             for j in range(3):
                 if self.stop_event.is_set():
                     return
-                mess = 'Change to Channel ' + str(j+2) + '\nChange to Band 1' + band_ranges[0]
-                ref_port = self.mbox(mess)
-                if ref_port == 'OK':
-                    self.new_gain(1,j+2)
-                    self.new_phase(2,j+2)
-
-                    f_band = self.mbox('Change to Band 2 %s' % (band_ranges[1]))
-                    if f_band == 'OK':
-                        self.new_gain(3,j+2)
-                        self.new_phase(4,j+2)
-                    
-                        f_band = self.mbox('Change to Band 3 %s' % (band_ranges[2]))
-                        if f_band == 'OK':
-                            self.new_gain(5,j+2)
-                            self.new_phase(6,j+2)
-                        
-                            f_band = self.mbox('Change to Band 4 %s' % (band_ranges[3]))
-                            if f_band == 'OK':
-                                self.new_gain(7,j+2)
-                                self.new_phase(8,j+2)
-                            else:
-                                self.stop_task()
+                mess = self.mbox('Connect VNA Port-1 to CH-%s RF Input of SFB\nConnect VNA Port-2 to CH-%s Output of SFB' % (str(j+2),str(j+2)))
+                if mess == "OK":
+                    for k in range(4):
+                        ref_port = self.mbox("Set SFB3 Band %s Control: %s" % (k+1,controls[k]))
+                        if ref_port == 'OK':
+                            self.new_gain(2*k+1,j+2)
+                            self.new_phase(2*k+2,j+2)
                         else:
                             self.stop_task()
-                    else:
-                        self.stop_task()
                 else:
                     self.stop_task()
 
             time.sleep(0.5)
-            self.marker_sfb(1,True)
+            
+            self.marker_sfb(1,False)
+
+
             self.ps_output(0)
             dut = self.sfb1_sl
-            self.save_diagram("SFB1","BITE",dut)       
+            self.save_diagram("SFB3","RF",dut)
+        else:
+            return
+        
+        return
+    
+    def track_sfb1_bite(self):
+
+        ip_zna = self.ip_zna
+
+        rm = visa.ResourceManager()
+        device = rm.open_resource(ip_zna)
+        time.sleep(2)
+        device.write('*RST')
+        device.close()
+        rm.close()
+        
+        controls = ["1 1","1 0","0 1","0 0"]
+        
+        message = "SFB1 range %s GHz - %s GHz\nConnect VNA Port-1 to CH-1 BITE Input of SFB\nConnect VNA Port-2 to CH-1 Output of SFB\nSet BITE control to 1" % (0.5,2.2)
+        ref_1 = self.mbox(message)
+        
+        if ref_1 == "OK":
+            for i in range(4):
+                if self.stop_event.is_set():
+                    return
+                
+                f_band = self.mbox("Set SFB1 Band %s Control: %s" % (i+1,controls[i]))
+                
+                if f_band == 'OK':
+                    self.gain_ref(band_num=1,sub_band=i,type='sfb',window=2*i+1)
+                    time.sleep(1)
+                    self.phase_ref_sfb(band_num=1,sub_band=i,window=2*i+2)
+                else:
+                    self.stop_task()
+                
+            for j in range(3):
+                if self.stop_event.is_set():
+                    return
+                mess = self.mbox('Connect VNA Port-1 to CH-%s BITE Input of SFB\nConnect VNA Port-2 to CH-%s Output of SFB' % (str(j+2),str(j+2)))
+                if mess == "OK":
+                    for k in range(4):
+                        ref_port = self.mbox("Set SFB1 Band %s Control: %s" % (k+1,controls[k]))
+                        if ref_port == 'OK':
+                            self.new_gain(2*k+1,j+2)
+                            self.new_phase(2*k+2,j+2)
+                        else:
+                            self.stop_task()
+                else:
+                    self.stop_task()
+
+            time.sleep(0.5)
+            
+            self.marker_sfb(1,False)
+
+
+            self.ps_output(0)
+            dut = self.sfb1_sl
+            self.save_diagram("SFB1","BITE",dut)
+        else:
+            return
+        
+        return
     
     def track_sfb2_bite(self):
         ip_zna = self.ip_zna
-        
+
         rm = visa.ResourceManager()
         device = rm.open_resource(ip_zna)
         time.sleep(2)
@@ -655,65 +669,56 @@ class APTracker:
         device.close()
         rm.close()
         
+        controls = ["0 1","1 0","0 0","1 1"]
         
-        band_ranges = [" (2.0 GHz to 2.75 GHz)",
-                    " (2.5 GHz to 3.75 GHz)",
-                    " (3.5 GHz to 5.25 GHz)",
-                    " (5.0 GHz to 6.25 GHz)"]
+        message = "SFB2 range %s GHz - %s GHz\nConnect VNA Port-1 to CH-1 BITE Input of SFB\nConnect VNA Port-2 to CH-1 Output of SFB\nSet BITE control to 1" % (2,6)
+        ref_1 = self.mbox(message)
         
-        bite_set = self.mbox('Set to BITE mode')
-        
-        if bite_set == 'OK':
+        if ref_1 == "OK":
             for i in range(4):
                 if self.stop_event.is_set():
                     return
-                band = 'Change to Band' + str(i+1) + band_ranges[i]
-                f_band = self.mbox(band)
+                
+                f_band = self.mbox("Set SFB2 Band %s Control: %s" % (i+1,controls[i]))
+                
                 if f_band == 'OK':
-                    self.gain_ref(band_num=2,sub_band=i,type='sfb',window=2*i+1)
-                    self.phase_ref_sfb(band_num=2,sub_band=i,window=2*i+2)
+                    self.gain_ref(band_num=1,sub_band=i,type='sfb',window=2*i+1)
+                    time.sleep(1)
+                    self.phase_ref_sfb(band_num=1,sub_band=i,window=2*i+2)
+                else:
+                    self.stop_task()
                 
             for j in range(3):
                 if self.stop_event.is_set():
                     return
-                mess = 'Change to Channel ' + str(j+2) + '\nChange to Band 1' + band_ranges[0]
-                ref_port = self.mbox(mess)
-                if ref_port == 'OK':
-                    self.new_gain(1,j+2)
-                    self.new_phase(2,j+2)
-
-                    f_band = self.mbox('Change to Band 2 %s' % (band_ranges[1]))
-                    if f_band == 'OK':
-                        self.new_gain(3,j+2)
-                        self.new_phase(4,j+2)
-                    
-                        f_band = self.mbox('Change to Band 3 %s' % (band_ranges[2]))
-                        if f_band == 'OK':
-                            self.new_gain(5,j+2)
-                            self.new_phase(6,j+2)
-                        
-                            f_band = self.mbox('Change to Band 4 %s' % (band_ranges[3]))
-                            if f_band == 'OK':
-                                self.new_gain(7,j+2)
-                                self.new_phase(8,j+2)
-                            else:
-                                self.stop_task()
+                mess = self.mbox('Connect VNA Port-1 to CH-%s BITE Input of SFB\nConnect VNA Port-2 to CH-%s Output of SFB' % (str(j+2),str(j+2)))
+                if mess == "OK":
+                    for k in range(4):
+                        ref_port = self.mbox("Set SFB2 Band %s Control: %s" % (k+1,controls[k]))
+                        if ref_port == 'OK':
+                            self.new_gain(2*k+1,j+2)
+                            self.new_phase(2*k+2,j+2)
                         else:
                             self.stop_task()
-                    else:
-                        self.stop_task()
                 else:
                     self.stop_task()
-            
+
             time.sleep(0.5)
-            self.marker_sfb(2,True)
+            
+            self.marker_sfb(1,False)
+
+
             self.ps_output(0)
-            dut = self.sfb2_sl
-            self.save_diagram("SFB2","BITE",dut)
+            dut = self.sfb1_sl
+            self.save_diagram("SFB1","BITE",dut)
+        else:
+            return
+        
+        return
     
     def track_sfb3_bite(self):
         ip_zna = self.ip_zna
-        
+
         rm = visa.ResourceManager()
         device = rm.open_resource(ip_zna)
         time.sleep(2)
@@ -721,61 +726,52 @@ class APTracker:
         device.close()
         rm.close()
         
+        controls = ["0 0","0 1","1 0","1 1"]
         
-        band_ranges = [" (6.0 GHz to 9.5 GHz)",
-                    " (9.0 GHz to 13.0 GHz)",
-                    " (12.5 GHz to 14.5 GHz)",
-                    " (14.0 GHz to 18.0 GHz)"]
-
-        bite_set = self.mbox('Set to BITE mode')
+        message = "SFB3 range %s GHz - %s GHz\nConnect VNA Port-1 to CH-1 BITE Input of SFB\nConnect VNA Port-2 to CH-1 Output of SFB\nSet BITE control to 1" % (6,18)
+        ref_1 = self.mbox(message)
         
-        if bite_set == 'OK':
+        if ref_1 == "OK":
             for i in range(4):
                 if self.stop_event.is_set():
                     return
-                band = 'Change to Band' + str(i+1) + band_ranges[i]
-                f_band = self.mbox(band)
+                
+                f_band = self.mbox("Set SFB13 Band %s Control: %s" % (i+1,controls[i]))
+                
                 if f_band == 'OK':
-                    self.gain_ref(band_num=3,sub_band=i,type='sfb',window=2*i+1)
-                    self.phase_ref_sfb(band_num=3,sub_band=i,window=2*i+2)
+                    self.gain_ref(band_num=1,sub_band=i,type='sfb',window=2*i+1)
+                    time.sleep(1)
+                    self.phase_ref_sfb(band_num=1,sub_band=i,window=2*i+2)
+                else:
+                    self.stop_task()
                 
             for j in range(3):
                 if self.stop_event.is_set():
                     return
-                mess = 'Change to Channel ' + str(j+2) + '\nChange to Band 1' + band_ranges[0]
-                ref_port = self.mbox(mess)
-                if ref_port == 'OK':
-                    self.new_gain(1,j+2)
-                    self.new_phase(2,j+2)
-
-                    f_band = self.mbox('Change to Band 2 %s' % (band_ranges[1]))
-                    if f_band == 'OK':
-                        self.new_gain(3,j+2)
-                        self.new_phase(4,j+2)
-                    
-                        f_band = self.mbox('Change to Band 3 %s' % (band_ranges[2]))
-                        if f_band == 'OK':
-                            self.new_gain(5,j+2)
-                            self.new_phase(6,j+2)
-                        
-                            f_band = self.mbox('Change to Band 4 %s' % (band_ranges[3]))
-                            if f_band == 'OK':
-                                self.new_gain(7,j+2)
-                                self.new_phase(8,j+2)
-                            else:
-                                self.stop_task()
+                mess = self.mbox('Connect VNA Port-1 to CH-%s BITE Input of SFB\nConnect VNA Port-2 to CH-%s Output of SFB' % (str(j+2),str(j+2)))
+                if mess == "OK":
+                    for k in range(4):
+                        ref_port = self.mbox("Set SFB3 Band %s Control: %s" % (k+1,controls[k]))
+                        if ref_port == 'OK':
+                            self.new_gain(2*k+1,j+2)
+                            self.new_phase(2*k+2,j+2)
                         else:
                             self.stop_task()
-                    else:
-                        self.stop_task()
                 else:
                     self.stop_task()
-            
+
             time.sleep(0.5)
-            self.marker_sfb(3,True)
+            
+            self.marker_sfb(1,False)
+
+
             self.ps_output(0)
             dut = self.sfb1_sl
             self.save_diagram("SFB3","BITE",dut)
+        else:
+            return
+        
+        return
     
     def marker_sfb(self,band_num,bite=False):
         rm = visa.ResourceManager()
@@ -784,6 +780,10 @@ class APTracker:
         #device.write('*RST')
         amp_track = []
         phase_track = []
+        max_val_gain = []
+        min_val_gain = []
+        max_val_phase = []
+        min_val_phase = []
 
         for i in [1,3,5,7]:
             for j in range(4):
@@ -794,6 +794,12 @@ class APTracker:
                 device.write(":CALCulate%s:MARKer%s ON" % (i,2*j+2))
                 device.write(":CALCulate%s:MARKer%s:MIN" % (i,2*j+2))
 
+                max_val_gain.append(float(device.query("CALC%s:MARK%s:Y?" % (i,2*j+1))))
+                min_val_gain.append(float(device.query("CALC%s:MARK%s:Y?" % (i,2*j+2))))
+            
+            gain = (max(max_val_gain) - min(min_val_gain))/2
+            amp_track.append(gain)
+
         for m in [2,4,6,8]:
             for n in range(4):
                 device.write(":CALCulate%s:PARameter:SELect 'Phase%s_Ch%s'" % (m,m,n+1))
@@ -803,51 +809,18 @@ class APTracker:
                 device.write(":CALCulate%s:MARKer%s ON" % (m,2*n+2))
                 device.write(":CALCulate%s:MARKer%s:MIN" % (m,2*n+2))
 
+                max_val_phase.append(float(device.query("CALC%s:MARK%s:Y?" % (m,2*n+1))))
+                min_val_phase.append(float(device.query("CALC%s:MARK%s:Y?" % (m,2*n+2))))
 
-        for i in [1,3,5,7]:
-            device.write(":CALCulate%s:PARameter:SELect 'Gain%s_Ch1'" % (i,i))
-            max_val1 = float(device.query("CALC%s:MARK1:Y?" % (i)))
-            min_val1 = float(device.query("CALC%s:MARK2:Y?" % (i)))
-
-            device.write(":CALCulate%s:PARameter:SELect 'Gain%s_Ch2'" % (i,i))
-            max_val2 = float(device.query("CALC%s:MARK3:Y?" % (i)))
-            min_val2 = float(device.query("CALC%s:MARK4:Y?" % (i)))
-
-            device.write(":CALCulate%s:PARameter:SELect 'Gain%s_Ch3'" % (i,i))
-            max_val3 = float(device.query("CALC%s:MARK5:Y?" % (i)))
-            min_val3 = float(device.query("CALC%s:MARK6:Y?" % (i)))
-
-            device.write(":CALCulate%s:PARameter:SELect 'Gain%s_Ch4'" % (i,i))
-            max_val4 = float(device.query("CALC%s:MARK7:Y?" % (i)))
-            min_val4 = float(device.query("CALC%s:MARK8:Y?" % (i)))
-
-            amp = (max([max_val1,max_val2,max_val3,max_val4]) - min([min_val1,min_val2,min_val3,min_val4]))/2
-            amp_track.append(amp)
-
-        for j in [2,4,6,8]:
-            device.write(":CALCulate%s:PARameter:SELect 'Phase%s_Ch1'" % (j,j))
-            max_val1 = float(device.query("CALC%s:MARK1:Y?" % (j)))
-            min_val1 = float(device.query("CALC%s:MARK2:Y?" % (j)))
-
-            device.write(":CALCulate%s:PARameter:SELect 'Phase%s_Ch2'" % (j,j))
-            max_val2 = float(device.query("CALC%s:MARK3:Y?" % (j)))
-            min_val2 = float(device.query("CALC%s:MARK4:Y?" % (j)))
-
-            device.write(":CALCulate%s:PARameter:SELect 'Phase%s_Ch3'" % (j,j))
-            max_val3 = float(device.query("CALC%s:MARK5:Y?" % (j)))
-            min_val3 = float(device.query("CALC%s:MARK6:Y?" % (j)))
-
-            device.write(":CALCulate%s:PARameter:SELect 'Phase%s_Ch4'" % (j,j))
-            max_val4 = float(device.query("CALC%s:MARK7:Y?" % (j)))
-            min_val4 = float(device.query("CALC%s:MARK8:Y?" % (j)))
-
-            phase = (max([max_val1,max_val2,max_val3,max_val4]) - min([min_val1,min_val2,min_val3,min_val4]))/2
+            phase = (max(max_val_phase) - min(min_val_phase))/2
             phase_track.append(phase)
 
         self.export_sfb(amp_track,phase_track,band_num,bite)
 
         device.close()
         rm.close()
+
+        return
     
     def export_sfb(self,amp_track,phase_track,band_num=1,bite=False):
         now = datetime.now()
@@ -894,6 +867,8 @@ class APTracker:
 
         self.report_sfb(dt_string,template,wo,pdf_name,sfb)
 
+        return
+
     def save_diagram(self,folder_name,bite,dut):
         now = datetime.now()
         dt_string = now.strftime("%d_%m_%Y_%H_%M")
@@ -906,6 +881,8 @@ class APTracker:
 
         device.close()
         rm.close()
+
+        return
 
     def data_trace_off(self):
         ip_zna = self.ip_zna
@@ -921,6 +898,8 @@ class APTracker:
 
         device.close()
         rm.close()
+
+        return
 
     ####QSRx Module####
 
@@ -975,6 +954,8 @@ class APTracker:
         rm.close()
 
         CTkMessagebox(title='Warning!', message='Please wait for 40 seconds before continuing.', option_1='OK')
+
+        return
 
     def mixer_settings_gain(self,bands,window):
         ip_zna = self.ip_zna
@@ -1059,6 +1040,8 @@ class APTracker:
 
         device.close()
         rm.close()
+
+        return
 
     def mixer_settings_phase(self,ref_port,bands,window):
         ip_zna = self.ip_zna
@@ -1146,6 +1129,8 @@ class APTracker:
         device.close()
         rm.close()
 
+        return
+
     def phase_def(self,window,ref_port):
         ip_zna = self.ip_zna
         
@@ -1160,6 +1145,8 @@ class APTracker:
         
         device.close()
         rm.close()
+
+        return
 
     def phase_ref_qsrx(self,lo1,ref_port,window):
         ip_zna = self.ip_zna
@@ -1197,6 +1184,8 @@ class APTracker:
         device.close()
         rm.close()
 
+        return
+
     def gain_ref_qsrx(self,lo1,window):
         ip_zna = self.ip_zna
 
@@ -1227,6 +1216,8 @@ class APTracker:
         device.close()
         rm.close()
 
+        return
+
     def new_phase_qsrx(self,lo1,window,ref_port,p_num):
         ip_zna = self.ip_zna
 
@@ -1254,6 +1245,8 @@ class APTracker:
         device.close()
         rm.close()
 
+        return
+
     def lo_settings(self,freq,amp):
         time.sleep(1)
         ip_lo = self.ip_lo
@@ -1268,6 +1261,8 @@ class APTracker:
         rm.close()
 
         time.sleep(3)
+
+        return
 
     def new_gain_qsrx(self,lo1,window,g_num):
         ip_zna = self.ip_zna
@@ -1296,6 +1291,8 @@ class APTracker:
         
         device.close()
         rm.close()
+
+        return
 
     def marker_qsr(self,num):
         ip_zna = self.ip_zna
@@ -1528,7 +1525,7 @@ class APTracker:
                 if self.stop_event.is_set():
                     return
 
-                chan_change = self.mbox("Connect VNA Port-1 to CH-%s DRx Input\nConnect VNA Port-2 to CH-%s DRx Output" % (chan,chan))
+                chan_change = self.mbox("Connect VNA Port-1 to CH-%s Input of Band 1\nConnect VNA Port-2 to CH-%s DRx Output" % (chan,chan))
                 if chan_change == 'OK':
                     #Window 1
                     
@@ -1561,7 +1558,7 @@ class APTracker:
                 for chan in [2,3]:
                     if self.stop_event.is_set():
                         return
-                    chan_change = self.mbox("Connect VNA Port-1 to CH-%s DRx Input\nConnect VNA Port-2 to CH-%s DRx Output" % (chan,chan))
+                    chan_change = self.mbox("Connect VNA Port-1 to CH-%s Input of Band 1\nConnect VNA Port-2 to CH-%s DRx Output" % (chan,chan))
                     if chan_change == 'OK':
 
                         for step7 in range(4):
@@ -1594,6 +1591,8 @@ class APTracker:
 
         else:
             self.stop_task()
+
+        return 0,0,0
 
     def qsrx_band2(self,dt_string):
         ip_zna = self.ip_zna
@@ -1976,6 +1975,8 @@ class APTracker:
         else:
             self.stop_task()
 
+        return 0,0,0
+
     def qsrx_band3(self,dt_string):
         ip_zna = self.ip_zna
 
@@ -2022,7 +2023,7 @@ class APTracker:
                 [13.5,15.5],
                 [15.5,18]]
 
-        ref_1 = self.mbox("Current Band is %s GHz - %s GHz\nConnect VNA Port-1 to CH-1 Input of Band 3\nConnect VNA Port-2 to CH-1 DRx Output\nConnect VNA Ref Port to CH-2 Input of Band 3\nConnect VNA Port-4 to CH-2 DRx Output\nSet QSRx Band-2 Control : 0 0" % (6,18))
+        ref_1 = self.mbox("Current Band is %s GHz - %s GHz\nConnect VNA Port-1 to CH-1 Input of Band 3\nConnect VNA Port-2 to CH-1 DRx Output\nConnect VNA Ref Port to CH-2 Input of Band 3\nConnect VNA Port-4 to CH-2 DRx Output\nSet QSRx Band-3 Control : 0 0" % (6,18))
         
 
         if ref_1 == 'OK':
@@ -2245,6 +2246,8 @@ class APTracker:
         else:
             self.stop_task()
 
+        return 0,0,0
+
     def qsrx_band1_int(self,dt_string,bite='RF'):
         ip_zna = self.ip_zna
 
@@ -2396,6 +2399,10 @@ class APTracker:
             
             else:
                 self.stop_task()
+        else:
+                self.stop_task()
+
+        return 0,0,0
 
     def qsrx_band2_int(self,dt_string,bite='RF'):
         ip_zna = self.ip_zna
@@ -2823,6 +2830,8 @@ class APTracker:
         else:
             self.stop_task()
 
+        return 0,0,0
+
     def qsrx_band3_int(self,dt_string,bite='RF'):
         ip_zna = self.ip_zna
 
@@ -2872,7 +2881,7 @@ class APTracker:
         if bite == 'BITE':
             _ = self.mbox("Set BITE control to 1")
 
-        ref_1 = self.mbox("Current Band is %s GHz - %s GHz\nConnect VNA Port-1 to CH-1 Input of SFB\nConnect VNA Port-2 to CH-1 DRx Output\nConnect VNA Ref Port to CH-2 Input of SFB\nConnect VNA Port-4 to CH-2 DRx Output\nSet QSRx Band-2 Control : 0 0" % (6,18))
+        ref_1 = self.mbox("Current Band is %s GHz - %s GHz\nConnect VNA Port-1 to CH-1 Input of SFB\nConnect VNA Port-2 to CH-1 DRx Output\nConnect VNA Ref Port to CH-2 Input of SFB\nConnect VNA Port-4 to CH-2 DRx Output\nSet QSRx Band-3 Control : 0 0" % (6,18))
         
 
         if ref_1 == 'OK':
@@ -3136,6 +3145,8 @@ class APTracker:
         else:
             self.stop_task()
 
+        return 0,0,0
+
     def data_trace_off_qsr(self):
         ip_zna = self.ip_zna
 
@@ -3161,6 +3172,8 @@ class APTracker:
         device.close()
         rm.close()
 
+        return
+
     def track_qsr(self):
         df = self.make_df()
         
@@ -3174,7 +3187,7 @@ class APTracker:
         rm.close()
 
         folder = self.new_folder(dut,False,False)
-        #qsrx_band3(folder)
+        
         a1,p21,p41 = self.qsrx_band1(folder)
 
         for i in range(4):
@@ -3193,6 +3206,7 @@ class APTracker:
 
         a3,p23,p43 = self.qsrx_band3(folder)
 
+        self.rf_off()
         self.ps_output(0)
 
         for k in range(25):
@@ -3201,9 +3215,10 @@ class APTracker:
             df.iloc[13+k,6] = max(p23[k],p43[k])
             df.iloc[13+k,7] = a3[k]
         
-        df.to_excel("test_data/%s/%s_QSRx.xlsx" % (folder,folder),index_label="Band")
-        
         self.report_qsr(folder,"template_RF.docx","report_QSRx.docx","report_QSRx.pdf",df)
+        df.to_excel("test_data/%s/%s_QSRx.xlsx" % (folder,folder),index_label="Band")
+
+        return
 
     def track_qsr_band1(self):
         df = self.make_df()
@@ -3218,9 +3233,10 @@ class APTracker:
         rm.close()
 
         folder = self.new_folder(dut,False,False)
-        #qsrx_band3(folder)
+        
         a1,p21,p41 = self.qsrx_band1(folder)
         
+        self.rf_off()
         self.ps_output(0)
 
         for i in range(4):
@@ -3229,9 +3245,10 @@ class APTracker:
             df.iloc[i,6] = max(p21[i],p41[i])
             df.iloc[i,7] = a1[i]
 
-        df.to_excel("test_data/%s/%s_QSRx_Band1.xlsx" % (folder,folder),index_label="Band")
-        
         self.report_qsr(folder,"template_RF.docx","report_QSRx_Band1.docx","report_QSRx_Band1.pdf",df)
+        df.to_excel("test_data/%s/%s_QSRx_Band1.xlsx" % (folder,folder),index_label="Band")
+
+        return
 
     def track_qsr_band2(self):
         df = self.make_df()
@@ -3246,9 +3263,10 @@ class APTracker:
         rm.close()
 
         folder = self.new_folder(dut,False,False)
-
+        
         a2,p22,p42 = self.qsrx_band2(folder)
 
+        self.rf_off()
         self.ps_output(0)
 
         for j in range(9):
@@ -3257,10 +3275,11 @@ class APTracker:
             df.iloc[4+j,6] = max(p22[j],p42[j])
             df.iloc[4+j,7] = a2[j]
         
-        df.to_excel("test_data/%s/%s_QSRx_Band2.xlsx" % (folder,folder),index_label="Band")
-        
         self.report_qsr(folder,"template_RF.docx","report_QSRx_Band2.docx","report_QSRx_Band2.pdf",df)
+        df.to_excel("test_data/%s/%s_QSRx_Band2.xlsx" % (folder,folder),index_label="Band")
 
+        return
+    
     def track_qsr_band3(self):
         df = self.make_df()
         
@@ -3274,8 +3293,10 @@ class APTracker:
         rm.close()
 
         folder = self.new_folder(dut,False,False)
+        
         a3,p23,p43 = self.qsrx_band3(folder)
 
+        self.rf_off()
         self.ps_output(0)
 
         for k in range(25):
@@ -3284,9 +3305,10 @@ class APTracker:
             df.iloc[13+k,6] = max(p23[k],p43[k])
             df.iloc[13+k,7] = a3[k]
         
-        df.to_excel("test_data/%s/%s_QSRx_Band3.xlsx" % (folder,folder),index_label="Band")
-        
         self.report_qsr(folder,"template_RF.docx","report_QSRx_Band3.docx","report_QSRx_Band3.pdf",df)
+        df.to_excel("test_data/%s/%s_QSRx_Band3.xlsx" % (folder,folder),index_label="Band")
+
+        return
 
     def track_qsr_int_rf(self):
         df = self.make_df()
@@ -3333,6 +3355,7 @@ class APTracker:
             self.ps_output(1)
             a3,p23,p43 = self.qsrx_band3_int(folder,'RF')
 
+        self.rf_off()
         self.ps_output(0)
 
         for k in range(25):
@@ -3341,9 +3364,10 @@ class APTracker:
             df.iloc[13+k,6] = max(p23[k],p43[k])
             df.iloc[13+k,7] = a3[k]
         
-        df.to_excel("test_data/%s/%s_QSRx_integrated_RF.xlsx" % (folder,folder),index_label="Band")
-        
         self.report_qsr(folder,"template_RF.docx","report_QSRx_Integrated_RF.docx","report_QSRx_Integrated_RF.pdf",df)
+        df.to_excel("test_data/%s/%s_QSRx_integrated_RF.xlsx" % (folder,folder),index_label="Band")
+
+        return
 
     def track_qsr_sfb1_rf(self):
         df = self.make_df()
@@ -3359,7 +3383,6 @@ class APTracker:
 
         folder = self.new_folder(dut,True,False)
         
-        
         a1,p21,p41 = self.qsrx_band1_int(folder,'RF')
 
         for i in range(4):
@@ -3369,10 +3392,12 @@ class APTracker:
             df.iloc[i,7] = a1[i]
 
         self.ps_output(0)
-        
-        df.to_excel("test_data/%s/%s_QSRx_integrated_SFB1_RF.xlsx" % (folder,folder),index_label="Band")
+        self.rf_off()
         
         self.report_qsr(folder,"template_RF.docx","report_QSRx_Integrated_SFB1_RF.docx","report_QSRx_Integrated_SFB1_RF.pdf",df)
+        df.to_excel("test_data/%s/%s_QSRx_integrated_SFB1_RF.xlsx" % (folder,folder),index_label="Band")
+
+        return
 
     def track_qsr_sfb2_rf(self):
         df = self.make_df()
@@ -3388,7 +3413,6 @@ class APTracker:
 
         folder = self.new_folder(dut,True,False)
         
-        
         a2,p22,p42 = self.qsrx_band2_int(folder,'RF')
 
         for j in range(9):
@@ -3397,11 +3421,13 @@ class APTracker:
             df.iloc[4+j,6] = max(p22[j],p42[j])
             df.iloc[4+j,7] = a2[j]
 
+        self.rf_off()
         self.ps_output(0)
         
-        df.to_excel("test_data/%s/%s_QSRx_integrated_SFB2_RF.xlsx" % (folder,folder),index_label="Band")
-        
         self.report_qsr(folder,"template_RF.docx","report_QSRx_Integrated_SFB2_RF.docx","report_QSRx_Integrated_SFB2_RF.pdf",df)
+        df.to_excel("test_data/%s/%s_QSRx_integrated_SFB2_RF.xlsx" % (folder,folder),index_label="Band")
+
+        return
 
     def track_qsr_sfb3_rf(self):
         df = self.make_df()
@@ -3416,7 +3442,6 @@ class APTracker:
         rm.close()
 
         folder = self.new_folder(dut,True,False)
-        
         a3,p23,p43 = self.qsrx_band3_int(folder,'RF')
 
         for k in range(25):
@@ -3425,12 +3450,14 @@ class APTracker:
             df.iloc[13+k,6] = max(p23[k],p43[k])
             df.iloc[13+k,7] = a3[k]
 
+        self.rf_off()
         self.ps_output(0)
         
-        df.to_excel("test_data/%s/%s_QSRx_integrated_SFB3_RF.xlsx" % (folder,folder),index_label="Band")
-        
         self.report_qsr(folder,"template_RF.docx","report_QSRx_Integrated_SFB3_RF.docx","report_QSRx_Integrated_SFB3_RF.pdf",df)
+        df.to_excel("test_data/%s/%s_QSRx_integrated_SFB3_RF.xlsx" % (folder,folder),index_label="Band")
 
+        return
+        
     def track_qsr_int_bite(self):
         df = self.make_df()
         
@@ -3474,6 +3501,7 @@ class APTracker:
             self.ps_output(1)
             a3,p23,p43 = self.qsrx_band3_int(folder,'BITE')
         
+        self.rf_off()
         self.ps_output(0)
 
         for k in range(25):
@@ -3482,9 +3510,10 @@ class APTracker:
             df.iloc[13+k,6] = max(p23[k],p43[k])
             df.iloc[13+k,7] = a3[k]
         
-        df.to_excel("test_data/%s/%s_QSRx_integrated_BITE.xlsx" % (folder,folder),index_label="Band")
-        
         self.report_qsr(folder,"template_BITE.docx","report_QSRx_Integrated_BITE.docx","report_QSRx_Integrated_BITE.pdf",df)
+        df.to_excel("test_data/%s/%s_QSRx_integrated_BITE.xlsx" % (folder,folder),index_label="Band")
+
+        return
 
     def track_qsr_sfb1_bite(self):
         df = self.make_df()
@@ -3501,6 +3530,7 @@ class APTracker:
         folder = self.new_folder(dut,True,True)
         a1,p21,p41 = self.qsrx_band1_int(folder,'BITE')
         
+        self.rf_off()
         self.ps_output(0)
 
         for i in range(4):
@@ -3509,9 +3539,10 @@ class APTracker:
             df.iloc[i,6] = max(p21[i],p41[i])
             df.iloc[i,7] = a1[i]
         
-        df.to_excel("test_data/%s/%s_QSRx_integrated_SFB1_BITE.xlsx" % (folder,folder),index_label="Band")
-        
         self.report_qsr(folder,"template_BITE.docx","report_QSRx_Integrated_SFB1_BITE.docx","report_QSRx_Integrated_SFB1_BITE.pdf",df)
+        df.to_excel("test_data/%s/%s_QSRx_integrated_SFB1_BITE.xlsx" % (folder,folder),index_label="Band")
+
+        return
 
     def track_qsr_sfb2_bite(self):
         df = self.make_df()
@@ -3528,6 +3559,7 @@ class APTracker:
         folder = self.new_folder(dut,True,True)
         a2,p22,p42 = self.qsrx_band2_int(folder,'BITE')
 
+        self.rf_off()
         self.ps_output(0)
 
         for j in range(9):
@@ -3536,9 +3568,10 @@ class APTracker:
             df.iloc[4+j,6] = max(p22[j],p42[j])
             df.iloc[4+j,7] = a2[j]
 
-        df.to_excel("test_data/%s/%s_QSRx_integrated_SFB2_BITE.xlsx" % (folder,folder),index_label="Band")
-        
         self.report_qsr(folder,"template_BITE.docx","report_QSRx_Integrated_SFB2_BITE.docx","report_QSRx_Integrated_SFB2_BITE.pdf",df)
+        df.to_excel("test_data/%s/%s_QSRx_integrated_SFB2_BITE.xlsx" % (folder,folder),index_label="Band")
+
+        return
 
     def track_qsr_sfb3_bite(self):
         df = self.make_df()
@@ -3555,6 +3588,7 @@ class APTracker:
         folder = self.new_folder(dut,True,True)
         a3,p23,p43 = self.qsrx_band3_int(folder,'BITE')
         
+        self.rf_off()
         self.ps_output(0)
 
         for k in range(25):
@@ -3563,9 +3597,10 @@ class APTracker:
             df.iloc[13+k,6] = max(p23[k],p43[k])
             df.iloc[13+k,7] = a3[k]
         
-        df.to_excel("test_data/%s/%s_QSRx_integrated_SFB3_BITE.xlsx" % (folder,folder),index_label="Band")
-        
         self.report_qsr(folder,"template_BITE.docx","report_QSRx_Integrated_SFB3_BITE.docx","report_QSRx_Integrated_SFB3_BITE.pdf",df)
+        df.to_excel("test_data/%s/%s_QSRx_integrated_SFB3_BITE.xlsx" % (folder,folder),index_label="Band")
+
+        return
 
     def make_df(self):
         qsrx = [[0.5,0.8,14.75,15,0.0,0.0,0.0,0.0],
@@ -3626,6 +3661,15 @@ class APTracker:
         bands = [[[0.4,0.75],[1.2,1.6],[1.6,2.2],[0.4,2.2]],
                 [[2.2,18.0],[2.5,18.0],[4.0,18.0],[6.0,18.0]]]
         
+        band_ranges = {1:[" (0.4 GHz to 0.75 GHz)",
+                    " (1.2 GHz to 1.6 GHz)",
+                    " (1.6 GHz to 2.2 GHz)",
+                    " (0.4 GHz to 2.2 GHz)"],
+                    2: [" (2.2 GHz to 18.0 GHz)",
+                    " (2.5 GHz to 18.0 GHz)",
+                    " (4.0 GHz to 18.0 GHz)",
+                    " (6.0 GHz to 18.0 GHz)"]}
+        
         current = bands[band_num-1][sub_band]
         
         self.sfb_settings(current,window=window)
@@ -3635,7 +3679,7 @@ class APTracker:
         device.write(":CALC%s:PAR:SDEF 'Phase%s', 'S21'" % (window,window))
             
         device.write("DISPlay:WINDow%s:STATe ON" % (window)) 
-        device.write(":DISP:WIND%s:TITL:DATA 'Phase: Band%s'" % (window,band_num))
+        device.write(":DISP:WIND%s:TITL:DATA 'Phase HMR SFB %s'" % (window,band_ranges[band_num][sub_band]))
         device.write(":DISP:WIND%s:TRAC:EFEED 'Phase%s'" % (window,window))
         device.write(":DISPlay:WINDow%s:TRACe:Y:PDIVision 5,'Phase%s'" % (window,window))
         device.write("DISP:WIND%s:TRAC:Y:RLEV 0, 'Phase%s'" % (window,window))
@@ -3662,11 +3706,22 @@ class APTracker:
         device.close()
         rm.close()
 
+        return
+
     def gain_ref_hmr(self,band_num,sub_band,window=2):
         ip_zna = self.ip_zna
 
         bands = [[[0.4,0.75],[1.2,1.6],[1.6,2.2],[0.4,2.2]],
                 [[2.2,18.0],[2.5,18.0],[4.0,18.0],[6.0,18.0]]]
+        
+        band_ranges = {1:[" (0.4 GHz to 0.75 GHz)",
+                    " (1.2 GHz to 1.6 GHz)",
+                    " (1.6 GHz to 2.2 GHz)",
+                    " (0.4 GHz to 2.2 GHz)"],
+                    2: [" (2.2 GHz to 18.0 GHz)",
+                    " (2.5 GHz to 18.0 GHz)",
+                    " (4.0 GHz to 18.0 GHz)",
+                    " (6.0 GHz to 18.0 GHz)"]}
         
         current = bands[band_num-1][sub_band]
         self.sfb_settings(current,window=window)
@@ -3685,7 +3740,7 @@ class APTracker:
         device.write("DISP:WIND%s:TRAC:Y:RLEV 0, 'Gain%s'" % (window,window))
         device.write("DISP:WIND%s:TRAC:Y:RPOS 50, 'Gain%s'" % (window,window))
         device.write("DISPlay:WINDow%s:STATe ON" % (window))
-        device.write(":DISP:WIND%s:TITL:DATA 'Gain: Band%s'" % (window,band_num))
+        device.write(":DISP:WIND%s:TITL:DATA 'Gain HMR SFB %s'" % (window,band_ranges[band_num][sub_band]))
         device.write(':CALCulate%s:FORMat %s' % (window,'MLOGarithmic'))
         time.sleep(0.5)
         device.write(":TRAC:COPY:MATH 'Gain%s_mem','Gain%s'" % (window,window))
@@ -3706,246 +3761,239 @@ class APTracker:
         device.close()
         rm.close()
 
+        return
+
     def track_hmr1(self):
+        
+        ip_zna = self.ip_zna
 
         rm = visa.ResourceManager()
-        device = rm.open_resource(self.ip_zna)
+        device = rm.open_resource(ip_zna)
         time.sleep(2)
         device.write('*RST')
         device.close()
         rm.close()
-
-        band_ranges = [" (0.4 GHz to 0.75 GHz)",
-                    " (1.2 GHz to 1.6 GHz)",
-                    " (1.6 GHz to 2.2 GHz)",
-                    " (0.4 GHz to 2.2 GHz)"]
         
-        for i in range(4):
-            if self.stop_event.is_set():
-                return
-            band = 'Change to Band' + str(i+1) + band_ranges[i]
-            f_band = self.mbox(band)
-            if f_band == 'OK':
-                self.gain_ref_hmr(band_num=1,sub_band=i,window=2*i+1)
-                time.sleep(1)
-                self.phase_ref_sfb(band_num=1,sub_band=i,window=2*i+2)
-            
-        for j in range(3):
-            if self.stop_event.is_set():
-                return
-            mess = 'Change to Channel ' + str(j+2) + '\nChange to Band 1' + band_ranges[0]
-            ref_port = self.mbox(mess)
-            if ref_port == 'OK':
-                self.new_gain(1,j+2)
-                time.sleep(1)
-                self.new_phase(2,j+2)
-
-                f_band = self.mbox('Change to Band 2 %s' % (band_ranges[1]))
-                if f_band == 'OK':
-                    self.new_gain(3,j+2)
-                    time.sleep(1)
-                    self.new_phase(4,j+2)
+        controls = ["0 1","0 0","1 0","1 1"]
+        
+        message = "HMR range %s GHz - %s GHz\nConnect VNA Port-1 to CH-1 RF Input of HMR-SFB\nConnect VNA Port-2 to CH-1 Output of HMR-SFB" % (0.4,2.2)
+        ref_1 = self.mbox(message)
+        
+        if ref_1 == "OK":
+            for i in range(4):
+                if self.stop_event.is_set():
+                    return
                 
-                    f_band = self.mbox('Change to Band 3 %s' % (band_ranges[2]))
-                    if f_band == 'OK':
-                        self.new_gain(5,j+2)
-                        time.sleep(1)
-                        self.new_phase(6,j+2)
-                    
-                        f_band = self.mbox('Change to Band 4 %s' % (band_ranges[3]))
-                        if f_band == 'OK':
-                            self.new_gain(7,j+2)
-                            time.sleep(1)
-                            self.new_phase(8,j+2)
+                f_band = self.mbox("Set HMR-SFB Low Band %s Control: %s" % (i+1,controls[i]))
+                
+                if f_band == 'OK':
+                    self.gain_ref_hmr(band_num=1,sub_band=i,window=2*i+1)
+                    time.sleep(1)
+                    self.phase_ref_hmr(band_num=1,sub_band=i,window=2*i+2)
+                else:
+                    self.stop_task()
+                
+            for j in range(3):
+                if self.stop_event.is_set():
+                    return
+                mess = self.mbox('Connect VNA Port-1 to CH-%s RF Input of HMR-SFB\nConnect VNA Port-2 to CH-%s Output of HMR-SFB' % (str(j+2),str(j+2)))
+                if mess == "OK":
+                    for k in range(4):
+                        ref_port = self.mbox("Set HMR-SFB Low Band %s Control: %s" % (k+1,controls[k]))
+                        if ref_port == 'OK':
+                            self.new_gain(2*k+1,j+2)
+                            self.new_phase(2*k+2,j+2)
+                        else:
+                            self.stop_task()
+                else:
+                    self.stop_task()
 
-        time.sleep(0.5)
-        self.marker_hmr(1,False)
-        self.ps_output(0)
-        dut = self.hmrx_sl
-        self.save_diagram("HMRx_low","RF",dut)
+            time.sleep(0.5)
+            
+            self.marker_hmr(1,False)
+
+            self.ps_output(0)
+            dut = self.sfb1_sl
+            self.save_diagram("HMR_SFB_Low","RF",dut)
+        
+        #self.stop_task()
+        return
 
     def track_hmr1_bite(self):
 
+        ip_zna = self.ip_zna
+
         rm = visa.ResourceManager()
-        device = rm.open_resource(self.ip_zna)
+        device = rm.open_resource(ip_zna)
         time.sleep(2)
         device.write('*RST')
         device.close()
         rm.close()
-
-        band_ranges = [" (0.4 GHz to 0.75 GHz)",
-                    " (1.2 GHz to 1.6 GHz)",
-                    " (1.6 GHz to 2.2 GHz)",
-                    " (0.4 GHz to 2.2 GHz)"]
         
-        for i in range(4):
-            if self.stop_event.is_set():
-                return
-            band = 'Change to Band' + str(i+1) + band_ranges[i]
-            f_band = self.mbox(band)
-            if f_band == 'OK':
-                self.gain_ref_hmr(band_num=1,sub_band=i,window=2*i+1)
-                time.sleep(1)
-                self.phase_ref_sfb(band_num=1,sub_band=i,window=2*i+2)
-            
-        for j in range(3):
-            if self.stop_event.is_set():
-                return
-            mess = 'Change to Channel ' + str(j+2) + '\nChange to Band 1' + band_ranges[0]
-            ref_port = self.mbox(mess)
-            if ref_port == 'OK':
-                self.new_gain(1,j+2)
-                time.sleep(1)
-                self.new_phase(2,j+2)
-
-                f_band = self.mbox('Change to Band 2 %s' % (band_ranges[1]))
-                if f_band == 'OK':
-                    self.new_gain(3,j+2)
-                    time.sleep(1)
-                    self.new_phase(4,j+2)
+        controls = ["0 1","0 0","1 0","1 1"]
+        
+        message = "HMR range %s GHz - %s GHz\nConnect VNA Port-1 to CH-1 BITE Input of HMR-SFB\nConnect VNA Port-2 to CH-1 Output of HMR-SFB\nSet BITE control to 1" % (0.4,2.2)
+        ref_1 = self.mbox(message)
+        
+        if ref_1 == "OK":
+            for i in range(4):
+                if self.stop_event.is_set():
+                    return
                 
-                    f_band = self.mbox('Change to Band 3 %s' % (band_ranges[2]))
-                    if f_band == 'OK':
-                        self.new_gain(5,j+2)
-                        time.sleep(1)
-                        self.new_phase(6,j+2)
-                    
-                        f_band = self.mbox('Change to Band 4 %s' % (band_ranges[3]))
-                        if f_band == 'OK':
-                            self.new_gain(7,j+2)
-                            time.sleep(1)
-                            self.new_phase(8,j+2)
+                f_band = self.mbox("Set HMR-SFB Low Band %s Control: %s" % (i+1,controls[i]))
+                
+                if f_band == 'OK':
+                    self.gain_ref_hmr(band_num=1,sub_band=i,window=2*i+1)
+                    time.sleep(1)
+                    self.phase_ref_hmr(band_num=1,sub_band=i,window=2*i+2)
+                else:
+                    self.stop_task()
+                
+            for j in range(3):
+                if self.stop_event.is_set():
+                    return
+                mess = self.mbox('Connect VNA Port-1 to CH-%s BITE Input of HMR-SFB\nConnect VNA Port-2 to CH-%s Output of HMR-SFB' % (str(j+2),str(j+2)))
+                if mess == "OK":
+                    for k in range(4):
+                        ref_port = self.mbox("Set HMR-SFB Low Band %s Control: %s" % (k+1,controls[k]))
+                        if ref_port == 'OK':
+                            self.new_gain(2*k+1,j+2)
+                            self.new_phase(2*k+2,j+2)
+                        else:
+                            self.stop_task()
+                else:
+                    self.stop_task()
 
-        time.sleep(0.5)
+            time.sleep(0.5)
+
         self.marker_hmr(1,True)
         self.ps_output(0)
         dut = self.hmrx_sl
-        self.save_diagram("HMRx_low","BITE",dut)
+        self.save_diagram("HMR_SFB_Low","BITE",dut)
+
+        return
 
     def track_hmr2(self):
+        
+        ip_zna = self.ip_zna
 
         rm = visa.ResourceManager()
-        device = rm.open_resource(self.ip_zna)
+        device = rm.open_resource(ip_zna)
         time.sleep(2)
         device.write('*RST')
         device.close()
         rm.close()
-
-        band_ranges = [" (2.2 GHz to 18.0 GHz)",
-                    " (2.5 GHz to 18.0 GHz)",
-                    " (4.0 GHz to 18.0 GHz)",
-                    " (6.0 GHz to 18.0 GHz)"]
         
-        for i in range(4):
-            if self.stop_event.is_set():
-                return
-            band = 'Change to Band' + str(i+1) + band_ranges[i]
-            f_band = self.mbox(band)
-            if f_band == 'OK':
-                self.gain_ref_hmr(band_num=1,sub_band=i,window=2*i+1)
-                time.sleep(1)
-                self.phase_ref_sfb(band_num=1,sub_band=i,window=2*i+2)
-            
-        for j in range(3):
-            if self.stop_event.is_set():
-                return
-            mess = 'Change to Channel ' + str(j+2) + '\nChange to Band 1' + band_ranges[0]
-            ref_port = self.mbox(mess)
-            if ref_port == 'OK':
-                self.new_gain(1,j+2)
-                time.sleep(1)
-                self.new_phase(2,j+2)
-
-                f_band = self.mbox('Change to Band 2 %s' % (band_ranges[1]))
-                if f_band == 'OK':
-                    self.new_gain(3,j+2)
-                    time.sleep(1)
-                    self.new_phase(4,j+2)
+        controls = ["1 1","0 1","1 0","0 0"]
+        
+        message = "HMR range %s GHz - %s GHz\nConnect VNA Port-1 to CH-1 RF Input of HMR-SFB\nConnect VNA Port-2 to CH-1 Output of HMR-SFB" % (0.4,2.2)
+        ref_1 = self.mbox(message)
+        
+        if ref_1 == "OK":
+            for i in range(4):
+                if self.stop_event.is_set():
+                    return
                 
-                    f_band = self.mbox('Change to Band 3 %s' % (band_ranges[2]))
-                    if f_band == 'OK':
-                        self.new_gain(5,j+2)
-                        time.sleep(1)
-                        self.new_phase(6,j+2)
-                    
-                        f_band = self.mbox('Change to Band 4 %s' % (band_ranges[3]))
-                        if f_band == 'OK':
-                            self.new_gain(7,j+2)
-                            time.sleep(1)
-                            self.new_phase(8,j+2)
+                f_band = self.mbox("Set HMR-SFB High Band %s Control: %s" % (i+1,controls[i]))
+                
+                if f_band == 'OK':
+                    self.gain_ref_hmr(band_num=2,sub_band=i,window=2*i+1)
+                    time.sleep(1)
+                    self.phase_ref_hmr(band_num=2,sub_band=i,window=2*i+2)
+                else:
+                    self.stop_task()
+                
+            for j in range(3):
+                if self.stop_event.is_set():
+                    return
+                mess = self.mbox('Connect VNA Port-1 to CH-%s RF Input of HMR-SFB\nConnect VNA Port-2 to CH-%s Output of HMR-SFB' % (str(j+2),str(j+2)))
+                if mess == "OK":
+                    for k in range(4):
+                        ref_port = self.mbox("Set HMR-SFB High Band %s Control: %s" % (k+1,controls[k]))
+                        if ref_port == 'OK':
+                            self.new_gain(2*k+1,j+2)
+                            self.new_phase(2*k+2,j+2)
+                        else:
+                            self.stop_task()
+                else:
+                    self.stop_task()
 
-        time.sleep(0.5)
-        self.marker_hmr(1,False)
-        self.ps_output(0)
-        dut = self.hmrx_sl
-        self.save_diagram("HMRx_high","RF",dut)
+            time.sleep(0.5)
+            
+            self.marker_hmr(2,False)
+
+            self.ps_output(0)
+            dut = self.sfb1_sl
+            self.save_diagram("HMR_SFB_High","RF",dut)
+        
+        #self.stop_task()
+        return
 
     def track_hmr2_bite(self):
 
+        ip_zna = self.ip_zna
+
         rm = visa.ResourceManager()
-        device = rm.open_resource(self.ip_zna)
+        device = rm.open_resource(ip_zna)
         time.sleep(2)
         device.write('*RST')
         device.close()
         rm.close()
-
-        band_ranges = [" (2.2 GHz to 18.0 GHz)",
-                    " (2.5 GHz to 18.0 GHz)",
-                    " (4.0 GHz to 18.0 GHz)",
-                    " (6.0 GHz to 18.0 GHz)"]
         
-        for i in range(4):
-            if self.stop_event.is_set():
-                return
-            band = 'Change to Band' + str(i+1) + band_ranges[i]
-            f_band = self.mbox(band)
-            if f_band == 'OK':
-                self.gain_ref_hmr(band_num=1,sub_band=i,window=2*i+1)
-                time.sleep(1)
-                self.phase_ref_sfb(band_num=1,sub_band=i,window=2*i+2)
-            
-        for j in range(3):
-            if self.stop_event.is_set():
-                return
-            mess = 'Change to Channel ' + str(j+2) + '\nChange to Band 1' + band_ranges[0]
-            ref_port = self.mbox(mess)
-            if ref_port == 'OK':
-                self.new_gain(1,j+2)
-                time.sleep(1)
-                self.new_phase(2,j+2)
-
-                f_band = self.mbox('Change to Band 2 %s' % (band_ranges[1]))
-                if f_band == 'OK':
-                    self.new_gain(3,j+2)
-                    time.sleep(1)
-                    self.new_phase(4,j+2)
+        controls = ["1 1","0 1","1 0","0 0"]
+        
+        message = "HMR range %s GHz - %s GHz\nConnect VNA Port-1 to CH-1 BITE Input of HMR-SFB\nConnect VNA Port-2 to CH-1 Output of HMR-SFB\nSet BITE control to 1" % (2.2,18.0)
+        ref_1 = self.mbox(message)
+        
+        if ref_1 == "OK":
+            for i in range(4):
+                if self.stop_event.is_set():
+                    return
                 
-                    f_band = self.mbox('Change to Band 3 %s' % (band_ranges[2]))
-                    if f_band == 'OK':
-                        self.new_gain(5,j+2)
-                        time.sleep(1)
-                        self.new_phase(6,j+2)
-                    
-                        f_band = self.mbox('Change to Band 4 %s' % (band_ranges[3]))
-                        if f_band == 'OK':
-                            self.new_gain(7,j+2)
-                            time.sleep(1)
-                            self.new_phase(8,j+2)
+                f_band = self.mbox("Set HMR-SFB High Band %s Control: %s" % (i+1,controls[i]))
+                
+                if f_band == 'OK':
+                    self.gain_ref_hmr(band_num=2,sub_band=i,window=2*i+1)
+                    time.sleep(1)
+                    self.phase_ref_hmr(band_num=2,sub_band=i,window=2*i+2)
+                else:
+                    self.stop_task()
+                
+            for j in range(3):
+                if self.stop_event.is_set():
+                    return
+                mess = self.mbox('Connect VNA Port-1 to CH-%s BITE Input of HMR-SFB\nConnect VNA Port-2 to CH-%s Output of HMR-SFB' % (str(j+2),str(j+2)))
+                if mess == "OK":
+                    for k in range(4):
+                        ref_port = self.mbox("Set HMR-SFB High Band %s Control: %s" % (k+1,controls[k]))
+                        if ref_port == 'OK':
+                            self.new_gain(2*k+1,j+2)
+                            self.new_phase(2*k+2,j+2)
+                        else:
+                            self.stop_task()
+                else:
+                    self.stop_task()
 
-        time.sleep(0.5)
-        self.marker_hmr(1,True)
+            time.sleep(0.5)
+
+        self.marker_hmr(2,True)
         self.ps_output(0)
         dut = self.hmrx_sl
-        self.save_diagram("HMRx_high","BITE",dut)
+        self.save_diagram("HMR_SFB_High","BITE",dut)
+
+        return
 
     def marker_hmr(self,band_num,bite=False):
-        ip_zna = self.ip_zna
         rm = visa.ResourceManager()
-        device = rm.open_resource(ip_zna)
+        device = rm.open_resource(self.ip_zna)
 
         #device.write('*RST')
         amp_track = []
         phase_track = []
+        max_val_gain = []
+        min_val_gain = []
+        max_val_phase = []
+        min_val_phase = []
 
         for i in [1,3,5,7]:
             for j in range(4):
@@ -3956,6 +4004,12 @@ class APTracker:
                 device.write(":CALCulate%s:MARKer%s ON" % (i,2*j+2))
                 device.write(":CALCulate%s:MARKer%s:MIN" % (i,2*j+2))
 
+                max_val_gain.append(float(device.query("CALC%s:MARK%s:Y?" % (i,2*j+1))))
+                min_val_gain.append(float(device.query("CALC%s:MARK%s:Y?" % (i,2*j+2))))
+            
+            gain = (max(max_val_gain) - min(min_val_gain))/2
+            amp_track.append(gain)
+
         for m in [2,4,6,8]:
             for n in range(4):
                 device.write(":CALCulate%s:PARameter:SELect 'Phase%s_Ch%s'" % (m,m,n+1))
@@ -3965,56 +4019,23 @@ class APTracker:
                 device.write(":CALCulate%s:MARKer%s ON" % (m,2*n+2))
                 device.write(":CALCulate%s:MARKer%s:MIN" % (m,2*n+2))
 
+                max_val_phase.append(float(device.query("CALC%s:MARK%s:Y?" % (m,2*n+1))))
+                min_val_phase.append(float(device.query("CALC%s:MARK%s:Y?" % (m,2*n+2))))
 
-        for i in [1,3,5,7]:
-            device.write(":CALCulate%s:PARameter:SELect 'Gain%s_Ch1'" % (i,i))
-            max_val1 = float(device.query("CALC%s:MARK1:Y?" % (i)))
-            min_val1 = float(device.query("CALC%s:MARK2:Y?" % (i)))
-
-            device.write(":CALCulate%s:PARameter:SELect 'Gain%s_Ch2'" % (i,i))
-            max_val2 = float(device.query("CALC%s:MARK3:Y?" % (i)))
-            min_val2 = float(device.query("CALC%s:MARK4:Y?" % (i)))
-
-            device.write(":CALCulate%s:PARameter:SELect 'Gain%s_Ch3'" % (i,i))
-            max_val3 = float(device.query("CALC%s:MARK5:Y?" % (i)))
-            min_val3 = float(device.query("CALC%s:MARK6:Y?" % (i)))
-
-            device.write(":CALCulate%s:PARameter:SELect 'Gain%s_Ch4'" % (i,i))
-            max_val4 = float(device.query("CALC%s:MARK7:Y?" % (i)))
-            min_val4 = float(device.query("CALC%s:MARK8:Y?" % (i)))
-
-            amp = (max([max_val1,max_val2,max_val3,max_val4]) - min([min_val1,min_val2,min_val3,min_val4]))/2
-            amp_track.append(amp)
-
-        for j in [2,4,6,8]:
-            device.write(":CALCulate%s:PARameter:SELect 'Phase%s_Ch1'" % (j,j))
-            max_val1 = float(device.query("CALC%s:MARK1:Y?" % (j)))
-            min_val1 = float(device.query("CALC%s:MARK2:Y?" % (j)))
-
-            device.write(":CALCulate%s:PARameter:SELect 'Phase%s_Ch2'" % (j,j))
-            max_val2 = float(device.query("CALC%s:MARK3:Y?" % (j)))
-            min_val2 = float(device.query("CALC%s:MARK4:Y?" % (j)))
-
-            device.write(":CALCulate%s:PARameter:SELect 'Phase%s_Ch3'" % (j,j))
-            max_val3 = float(device.query("CALC%s:MARK5:Y?" % (j)))
-            min_val3 = float(device.query("CALC%s:MARK6:Y?" % (j)))
-
-            device.write(":CALCulate%s:PARameter:SELect 'Phase%s_Ch4'" % (j,j))
-            max_val4 = float(device.query("CALC%s:MARK7:Y?" % (j)))
-            min_val4 = float(device.query("CALC%s:MARK8:Y?" % (j)))
-
-            phase = (max([max_val1,max_val2,max_val3,max_val4]) - min([min_val1,min_val2,min_val3,min_val4]))/2
+            phase = (max(max_val_phase) - min(min_val_phase))/2
             phase_track.append(phase)
 
-        self.export_csv_hmr(amp_track,phase_track,band_num,bite)
+        self.export_hmr(amp_track,phase_track,band_num,bite)
 
         device.close()
         rm.close()
 
-    def export_csv_hmr(self,amp_track,phase_track,band_num=1,bite=False):
+        return
+
+    def export_hmr(self,amp_track,phase_track,band_num=1,bite=False):
         now = datetime.now()
         dt_string = now.strftime("%d_%m_%Y_%H_%M")
-
+        os.mkdir("test_data/%s" % dt_string)
         bands = [["0.4 - 0.75","1.2 - 1.6","1.6 - 2.2","0.4 - 2.2"],
                 ["2.2 - 18.0","2.5 - 18.0","4.0 - 18.0","6.0 - 18.0"]]
 
@@ -4024,39 +4045,31 @@ class APTracker:
                     }
 
         hmr = pd.DataFrame(hmr_dict,index=[1,2,3,4])
-
+        band_type = ""
         for a in range(4):
             hmr.iloc[a,1] = amp_track[a]
             hmr.iloc[a,2] = phase_track[a]
         
-        dut = self.hmrx_sl
         if band_num == 1:
-            hmr_band = 'low'
+            dut = self.hmrx_sl
+            band_type = "Low"
         else:
-            hmr_band = 'high'
+            dut = self.sfb2_sl
+            band_type = "High"
+        
         if bite:
-            filename = "%s_HMRx_%s_BITE_%s.csv" % (dt_string,hmr_band,dut)
+            mode = "BITE"
         else:
-            filename = "%s_HMRx%s_RF_%s.csv" % (dt_string,hmr_band,dut)
-        hmr.to_csv(filename,index_label="Band")
+            mode = "RF"
 
-    def start_hmr1(self):
-        self.stop_event.clear()
-        self.task_thread = Thread(target=self.track_hmr1)
-        self.task_thread.start()
+        template = "template_HMR_SFB_%s_%s.docx" % (band_type,mode)
+        filename = "%s_HMR_SFB_%s_%s_%s" % (dt_string,band_type,mode,dut)
+        
+        ex = filename + ".xlsx"
+        wo = filename + ".docx"
+        pdf_name = filename + ".pdf"
 
-    def start_hmr1_bite(self):
-        self.stop_event.clear()
-        self.task_thread = Thread(target=self.track_hmr1_bite)
-        self.task_thread.start()
+        self.report_sfb(dt_string,template,wo,pdf_name,hmr)
+        hmr.to_excel("test_data/%s/%s" % (dt_string,ex),index_label="Band")
 
-    def start_hmr2(self):
-        self.stop_event.clear()
-        self.task_thread = Thread(target=self.track_hmr2)
-        self.task_thread.start()
-
-    def start_hmr2_bite(self):
-        self.stop_event.clear()
-        self.task_thread = Thread(target=self.track_hmr2_bite)
-        self.task_thread.start()
-
+        return
